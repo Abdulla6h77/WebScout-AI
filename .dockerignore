@@ -1,0 +1,10 @@
+.env
+.venv
+.uv-cache
+.playwright
+.git
+__pycache__
+.pytest_cache
+artifacts
+docs
+tests

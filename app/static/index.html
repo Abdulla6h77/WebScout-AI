@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebScout AI · Evidence first</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c121b;color:#edf3fc}*{box-sizing:border-box}body{max-width:900px;margin:auto;padding:40px 22px}header{border-bottom:1px solid #29364a;padding-bottom:24px}small{color:#90a7c2}h1{font-size:42px;margin-bottom:8px}h1 span{color:#68e6bf}p{line-height:1.6}form,article{padding:24px;border:1px solid #29364a;background:#121c2a;border-radius:16px;margin:24px 0}label{display:block;margin:14px 0 8px}textarea,input[type=url]{width:100%;padding:12px;border-radius:8px;background:#0c121b;border:1px solid #41546e;color:inherit;font:inherit}button{background:#68e6bf;border:0;border-radius:8px;padding:12px 24px;font-weight:700;margin-top:20px;cursor:pointer}button:disabled{opacity:.5}a{color:#8bc9ff;overflow-wrap:anywhere}blockquote{border-left:3px solid #68e6bf;padding-left:16px;margin-left:0;white-space:pre-wrap}#answer{white-space:pre-wrap;font-size:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere}footer{color:#90a7c2;font-size:13px}
+</style></head><body>
+<header><small>AMD MATCH 4 · INTERNAL DEMO</small><h1>WebScout <span>AI</span></h1><p>Ask a question. Inspect the evidence.</p></header>
+<form id="form"><label for="question">Research question</label><textarea id="question" required minlength="3" maxlength="2000" rows="3" placeholder="Find the refund policy on this website"></textarea>
+<label for="url">Starting URL (optional with configured search)</label><input id="url" type="url" placeholder="https://example.org">
+<label><input type="checkbox" id="browser"> Requires a dynamic browser</label><label><input type="checkbox" id="exact"> Exact answer only</label>
+<button id="submit">Find evidence</button><p id="progress" role="status"></p></form>
+<article id="result" hidden><small id="meta"></small><h2 id="status"></h2><p id="answer"></p><div id="sources"></div><pre id="warnings"></pre><details><summary>Execution stages</summary><pre id="trace"></pre></details></article>
+<footer>Prototype. Answers require retrieved evidence. Competition integration and external service availability remain unverified.</footer>
+<script>
+const $=id=>document.getElementById(id);
+$('form').addEventListener('submit',async e=>{e.preventDefault();$('submit').disabled=true;$('progress').textContent='Researching…';$('result').hidden=true;
+const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),185000);
+try{const response=await fetch('/query',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({question:$('question').value,starting_url:$('url').value||null,browser_required:$('browser').checked,exact_answer:$('exact').checked})});const data=await response.json();
+$('status').textContent=data.status;$('answer').textContent=data.answer||'No verified answer available.';$('meta').textContent=`${data.execution_time_ms} ms · Retrieval: ${data.retrieval_provider||'none'} · Model: ${data.model_provider||'none'} ${data.model||''}`;
+$('sources').replaceChildren();for(const source of data.citations||[]){const box=document.createElement('div'),a=document.createElement('a'),quote=document.createElement('blockquote');try{const u=new URL(source.url);if(!['https:','http:'].includes(u.protocol))continue;a.href=u.href;}catch{continue;}a.textContent=source.title||source.url;a.target='_blank';a.rel='noopener noreferrer';quote.textContent=source.supporting_text;box.append(a,quote);$('sources').append(box);}
+$('warnings').textContent=(data.warnings||[]).join('\n');$('trace').textContent=JSON.stringify(data.trace,null,2);$('result').hidden=false;$('progress').textContent='Complete';
+}catch(error){$('progress').textContent=error.name==='AbortError'?'Request expired.':'Request failed. Check the server connection.';}finally{clearTimeout(timeout);$('submit').disabled=false;}});
+</script></body></html>

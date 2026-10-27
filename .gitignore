@@ -1,0 +1,22 @@
+.venv/
+.uv-cache/
+.playwright/
+.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+artifacts/live-*.json
+artifacts/llm-diagnosis.json
+artifacts/repair-*.json
+
+# Local configuration
+.env.*
+!.env.example
+
+# Generated files
+artifacts/
+*.log
+.DS_Store
+
+/NUL
