@@ -1,18 +1,19 @@
 # WebScout AI
 
-**2026-10-27 provider repair:** real TinyFish + OpenRouter end-to-end answering and a re-fetched citation
-now pass (4.17 seconds in the recorded run). OpenRouter's pinned free model is first; Gemini remains
-upstream-unavailable. See [live repair report](docs/LLM_REPAIR_2026-10-27.md). Historical status below
-describes the original build before this repair.
+![WebScout AI Banner](https://github.com/Abdulla6h77/WebScout-AI/blob/main/assets/banner.png?raw=width=800&height=200)
 
-A general-purpose, evidence-first web retrieval prototype for AMD AI League Match 4.
+> **2026-10-27 provider repair:** real TinyFish + OpenRouter end-to-end answering and a re-fetched citation now pass (4.17 seconds in the recorded run). OpenRouter's pinned free model is first; Gemini remains upstream-unavailable. See [live repair report](docs/LLM_REPAIR_2026-10-27.md). Historical status below describes the original build before this repair.
+
+A general-purpose, evidence-first web retrieval prototype for **AMD AI League Match 4**.
 Built independently in this folder; no Medicine Autopilot code was accessed or reused.
 
-**Status:** the local workflow and fixture evaluation work. Live HTTP retrieval passed.
-Live LLM answering and TinyFish validation remain incomplete. This is not a claim of
-official AMD compatibility or competition readiness.
+[![Status](https://img.shields.io/badge/Status-Local%20workflow-green.svg)](https://img.shields.io/badge/Status-Local%20workflow-green.svg)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://img.shields.io/badge/Python-3.11+-blue.svg)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Run on Windows
+---
+
+## 🚀 Quick Start
 
 Python 3.11+ and [uv](https://docs.astral.sh/uv/) are required.
 
@@ -24,71 +25,132 @@ Copy-Item .env.example .env
 .venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open http://127.0.0.1:8000 for the demo, `/docs` for the API, `/health` for liveness,
-and `/ready` for configuration status. Readiness is not an external connectivity test.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the demo, `/docs` for the API, `/health` for liveness, and `/ready` for configuration status.
 
-The simplest eligible LLM setup is `OPENROUTER_API_KEY` with `OPENROUTER_MODEL=openrouter/free`.
-The free router is documented to use only free models; rate limits and model compatibility
-still apply. Gemini defaults to `gemini-3.8-flash`, listed with a free tier on Google's pricing
-page on 2026-10-22, but is disabled until `GEMINI_FREE_TIER_CONFIRMED=true` because an API key
-may belong to a billed project. NVIDIA requires an explicit model and confirmed free access.
-See [provider research](docs/PROVIDERS.md). No provider automatically switches to a paid model.
+**Simplest LLM setup:** `OPENROUTER_API_KEY` with `OPENROUTER_MODEL=openrouter/free`.
 
-Set `TINYFISH_API_KEY` for open-web search and primary page retrieval. Without it, provide
-a starting URL: static HTTP retrieval works without a search credential. Browser navigation
-uses `TINYFISH_AGENT_ENABLED=true` and `browser_required=true`; agent summaries are not accepted
-as independent evidence. Browser jobs consume TinyFish quota; validate your quota before use.
+---
 
-Optional local browser:
+## 📦 Installation
+
+| Step | Command |
+|------|---------|
+| 1. Install dependencies | `uv sync --frozen` |
+| 2. Copy environment template | `Copy-Item .env.example .env` |
+| 3. Configure API keys | Edit `.env` with your keys |
+| 4. Install Playwright browsers (optional) | ```powershell\n$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\\.playwright"\n.venv\Scripts\python -m playwright install chromium\n``` |
+| 5. Start the server | `.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000` |
+
+---
+
+## 🛠️ Usage
+
+### Local Development
 
 ```powershell
-$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\.playwright"
-.venv\Scripts\python -m playwright install chromium
-# Set PLAYWRIGHT_ENABLED=true in .env, retaining the same browser path when starting the server.
+# Start the server
+.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Open in browser
+# http://127.0.0.1:8000
+# http://127.0.0.1:8000/docs  - API documentation
+# http://127.0.0.1:8000/health - Liveness check
+# http://127.0.0.1:8000/ready   - Configuration status
 ```
 
-## API and local evaluator
+### API Examples
+
+**POST /query**
+
+```json
+{
+  "question": "What is this domain used for?",
+  "starting_url": "https://example.com/"
+}
+```
+
+**Example cURL:**
 
 ```powershell
 $body = @{ question='What is this domain used for?'; starting_url='https://example.com/' } | ConvertTo-Json
 Invoke-RestMethod http://127.0.0.1:8000/query -Method Post -ContentType application/json -Body $body
+```
+
+**Local adapter evaluation:**
+
+```powershell
 .venv\Scripts\python -m app.evaluation.local_adapter --question 'What is this domain used for?' --url https://example.com/
 ```
 
-The local adapter also accepts one JSON request per stdin line. The AMD adapter intentionally
-raises `NotImplementedError` until the organizer's real input/output contract is supplied.
+---
 
-## Test and benchmark
+## 🧪 Test and Benchmark
 
-```powershell
-.venv\Scripts\python -m pytest -q
-.venv\Scripts\python -m ruff check app tests scripts
-$env:PYTHONPATH='.'
-.venv\Scripts\python scripts/benchmark.py
-.venv\Scripts\python scripts/live_probe.py
-```
+| Command | Description |
+|---------|-------------|
+| `.venv\Scripts\python -m pytest -q` | Run test suite |
+| `.venv\Scripts\python -m ruff check app tests scripts` | Lint check |
+| `PYTHONPATH='.' .venv\Scripts\python scripts/benchmark.py` | Run benchmark |
+| `PYTHONPATH='.' .venv\Scripts\python scripts/live_probe.py` | Live probe |
 
-The live probe makes a bounded public HTTP request and at most one routed LLM extraction
-(zero retries), plus TinyFish Fetch if a key exists. It never outputs credentials. It writes
-`artifacts/live-probe.json`, which is gitignored. The offline benchmark uses fixtures and an
-answer oracle; its accuracy and millisecond latencies do not measure live web/LLM performance.
+**Live probe:** Makes a bounded public HTTP request and at most one routed LLM extraction (zero retries), plus TinyFish Fetch if a key exists. Results write to `artifacts/live-probe.json` (gitignored).
 
-Live browser tests require explicit opt-in: `WEBSCOUT_LIVE_TESTS=1` and
-`python -m pytest tests/live -q`. They may consume provider quota. Most tests need no network.
+**Live browser tests:** Require `WEBSCOUT_LIVE_TESTS=1` and `python -m pytest tests/live -q`. May consume provider quota.
 
-## Design and limits
+---
 
-LangGraph runs analyze → discover → navigate → extract → verify, with bounded replanning.
-Defaults: 30-second request budget, 8 attempted pages, 2 link hops, 3 rounds, concurrency 3.
-Answers are extractive: every claim must be a literal substring of its cited passage.
-LLM relevance assessment is complemented by deterministic evidence-ID, quote, source,
-negation, freshness, and limited numeric-conflict checks. This does not prove semantic
-entailment for every question. See [architecture](docs/ARCHITECTURE.md) and
-[evaluation](docs/EVALUATION.md).
+## 🏗️ Design & Architecture
 
-For production exposure, deploy behind authentication, request limits, and outbound network
-restrictions. Browser DNS rebinding and remote TinyFish navigation cannot be controlled fully
-by application-level URL checks; an egress policy is required. This demo binds to loopback by default.
+- **Pipeline:** LangGraph runs analyze → discover → navigate → extract → verify, with bounded replanning.
+- **Defaults:** 30-second request budget, 8 attempted pages, 2 link hops, 3 rounds, concurrency 3.
+- **Evidence-first:** Every claim must be a literal substring of its cited passage.
+- **Checks:** Negation, freshness, limited numeric-conflict checks.
+- See [architecture](docs/ARCHITECTURE.md) and [evaluation](docs/EVALUATION.md) for details.
 
-See [AMD requirements](docs/AMD_REQUIREMENTS.md), [deployment](docs/AMD_DEPLOYMENT.md),
-[progress](docs/IMPLEMENTATION_PROGRESS.md), and [submission checklist](docs/SUBMISSION_CHECKLIST.md).
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [AMD Requirements](docs/AMD_REQUIREMENTS.md) | AMD competition requirements |
+| [Deployment](docs/AMD_DEPLOYMENT.md) | Deployment guide |
+| [Implementation Progress](docs/IMPLEMENTATION_PROGRESS.md) | Progress tracking |
+| [Submission Checklist](docs/SUBMISSION_CHECKLIST.md) | Submission checklist |
+| [LLM Repair Report](docs/LLM_REPAIR_2026-10-27.md) | Latest LLM repair report |
+| [Providers](docs/PROVIDERS.md) | Provider research and configuration |
+| [Architecture](docs/ARCHITECTURE.md) | System architecture |
+| [Evaluation](docs/EVALUATION.md) | Evaluation methodology |
+
+---
+
+## 🐛 Known Limits
+
+- Browser DNS rebinding and remote TinyFish navigation cannot be fully controlled by application-level URL checks; an egress policy is required.
+- This demo binds to loopback by default.
+- Production exposure requires authentication, request limits, and outbound network restrictions.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- AMD AI League Match 4 organizers
+- TinyFish team
+- OpenRouter team
+- All contributors and supporters
